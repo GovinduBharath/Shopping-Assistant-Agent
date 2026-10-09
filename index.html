@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>AI Shopping Assistant</title>
+
+    <style>
+
+        body {
+            font-family: Arial;
+            background: #f4f4f4;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        input,
+        button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            box-sizing: border-box;
+        }
+
+        button {
+            background: #222;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        #result {
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>🛒 AI Shopping Assistant</h1>
+
+    <input
+        id="product"
+        placeholder="What do you want to buy?"
+    >
+
+    <input
+        id="budget"
+        placeholder="Budget e.g. $500"
+    >
+
+    <input
+        id="brand"
+        placeholder="Preferred brand"
+    >
+
+    <input
+        id="features"
+        placeholder="Important features"
+    >
+
+    <input
+        id="purpose"
+        placeholder="Purpose / Usage"
+    >
+
+    <button onclick="findProducts()">
+        Find Products
+    </button>
+
+    <div id="result"></div>
+
+</div>
+
+<script>
+
+async function findProducts() {
+
+    const result = document.getElementById("result");
+
+    result.innerText = "Finding suitable products...";
+
+    const input = {
+
+        product:
+            document.getElementById("product").value,
+
+        budget:
+            document.getElementById("budget").value,
+
+        brand:
+            document.getElementById("brand").value,
+
+        features:
+            document.getElementById("features").value,
+
+        purpose:
+            document.getElementById("purpose").value
+    };
+
+    try {
+
+        const response = await fetch(
+            "/shopping-agent/invoke",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    input: input
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        result.innerText = data.output;
+
+    }
+
+    catch (error) {
+
+        result.innerText =
+            "Error: " + error.message;
+
+    }
+
+}
+
+</script>
+
+</body>
+
+</html>
