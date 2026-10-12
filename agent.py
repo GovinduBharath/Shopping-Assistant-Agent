@@ -1,94 +1,124 @@
+
 import os
+from dotenv import load_dotenv
+
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 
-api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
+from tools import search_products
 
-if not api_key:
-    raise ValueError("AQ.Ab8RN6KQxphr6gKsK5cOD7K2oMAF7j-JTfk2KmsAab-scA1xrQ")
+load_dotenv()
+
+# Gemini API configuration
+GOOGLE_API_KEY = (
+    os.getenv("GOOGLE_API_KEY")
+    or os.getenv("GEMINI_API_KEY")
+)
+
+if not GOOGLE_API_KEY:
+    raise ValueError(
+        "Gemini API key is missing. Set GOOGLE_API_KEY in Render Environment."
+    )
+
+MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
 llm = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
-    google_api_key=api_key,
+    model=MODEL,
+    google_api_key=GOOGLE_API_KEY,
     temperature=0.2,
 )
 
+# Shopping assistant prompt
 prompt = ChatPromptTemplate.from_messages([
     (
         "system",
         """
 You are an AI Shopping Assistant.
 
-Your job is to help users find suitable products.
+Help users find suitable products based on their requirements.
 
-Analyze:
+Consider:
 - Product category
-- User requirements
 - Budget
-- Brand preference
-- Important features
-- Usage purpose
+- Preferred brand
+- Required features
+- Purpose of use
 
-Compare available products.
+Use the provided product search results to make recommendations.
+Compare available prices and features where possible.
 
-For every recommended product include:
-1. Product name
-2. Brand
-3. Price
-4. Main features
-5. Rating
-6. Product URL
-
-Do not invent products, prices, ratings, or URLs.
-
-Keep the recommendations clear and useful.
+Never invent product listings, prices, ratings, or URLs.
+If no products are found, explain that and suggest trying another search.
+Clearly state when information is unavailable.
 """
     ),
     (
         "human",
         """
-Help me find products using these requirements:
+Find suitable products using these requirements:
 
 Product: {product}
 Budget: {budget}
-Brand: {brand}
-Important features: {features}
+Preferred brand: {brand}
+Required features: {features}
 Purpose: {purpose}
+
+Product search results:
+{product_results}
+
+Recommend the most suitable available options.
+Explain briefly why each product matches the user's needs.
 """
-    )
+    ),
 ])
 
-chain = prompt | llm | StrOutputParser()
+# Build the LangChain runnable
+shopping_chain = (
+    prompt
+    | llm
+    | StrOutputParser()
+)
 
 
 def shopping_agent(inputs):
+    """Search for products and generate AI recommendations."""
 
     products = search_products(
         product=inputs["product"],
-        budget=inputs["budget"]
+        budget=inputs["budget"],
     )
 
-    product_text = "\n".join(
+    product_results = "\n\n".join(
         [
-            f"""
-Product: {item.get('title')}
-Brand: {item.get('brand')}
-Price: {item.get('price')}
-Rating: {item.get('rating')}
-URL: {item.get('url')}
-"""
+            (
+                f"Product: {item.get('title', 'Unknown')}\n"
+                f"Brand: {item.get('brand') or 'Not specified'}\n"
+                f"Price: {item.get('price') or 'Not available'}\n"
+                f"Rating: {item.get('rating') or 'Not available'}\n"
+                f"URL: {item.get('url') or 'Not available'}\n"
+                f"Description: {item.get('description') or 'Not available'}"
+            )
             for item in products
         ]
     )
 
-    result = chain.invoke({
+    if not product_results:
+        product_results = (
+            "No products were returned by the product search API."
+        )
+
+    return shopping_chain.invoke({
         "product": inputs["product"],
         "budget": inputs["budget"],
-        "brand": inputs["brand"],
-        "features": inputs["features"],
-        "purpose": inputs["purpose"]
+        "brand": inputs.get("brand", "Any"),
+        "features": inputs.get("features", "No specific features"),
+        "purpose": inputs.get("purpose", "General use"),
+        "product_results": product_results,
     })
 
-    return result + "\n\nPRODUCT SEARCH RESULTS:\n" + product_text
 
+# Expose the callable function as a LangServe-compatible runnable.
+from langchain_core.runnables import RunnableLambda
 
-shopping_chain = chain
+shopping_chain = RunnableLambda(shopping_agent)
