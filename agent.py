@@ -1,25 +1,15 @@
 import os
-
-from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
 
-from tools import search_products
+api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
 
-load_dotenv()
-
-GOOGLE_API_KEY= os.getenv("AQ.Ab8RN6KQxphr6gKsK5cOD7K2oMAF7j-JTfk2KmsAab-scA1xrQ")
-
-MODEL = os.getenv(
-    "GEMINI_MODEL",
-    "gemini-2.5-flash"
-)
+if not api_key:
+    raise ValueError("AQ.Ab8RN6KQxphr6gKsK5cOD7K2oMAF7j-JTfk2KmsAab-scA1xrQ")
 
 llm = ChatGoogleGenerativeAI(
-    model=MODEL,
-    google_api_key=GOOGLE_API_KEY,
-    temperature=0.2
+    model="gemini-2.5-flash",
+    google_api_key=api_key,
+    temperature=0.2,
 )
 
 prompt = ChatPromptTemplate.from_messages([
