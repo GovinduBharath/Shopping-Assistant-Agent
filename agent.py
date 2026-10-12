@@ -9,7 +9,7 @@ from tools import search_products
 
 load_dotenv()
 
-GOOGLE_API_KEY = os.getenv("AQ.Ab8RN6JtVp11cs6Yxl66Z69TdxC4JD0ZoEZO45RlYoZfuHHFrQ")
+GOOGLE_API_KEY= os.getenv("AQ.Ab8RN6KQxphr6gKsK5cOD7K2oMAF7j-JTfk2KmsAab-scA1xrQ")
 
 MODEL = os.getenv(
     "GEMINI_MODEL",
