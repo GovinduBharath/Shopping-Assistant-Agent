@@ -1,157 +1,265 @@
+
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Shopping Assistant</title>
 
     <style>
+        * {
+            box-sizing: border-box;
+        }
 
         body {
-            font-family: Arial;
-            background: #f4f4f4;
-            padding: 30px;
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 24px;
+            color: #222;
         }
 
         .container {
-            max-width: 700px;
-            margin: auto;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 28px;
             background: white;
-            padding: 25px;
-            border-radius: 10px;
+            border-radius: 12px;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
         }
 
         h1 {
             text-align: center;
+            margin-bottom: 28px;
         }
 
-        input,
+        label {
+            display: block;
+            margin: 14px 0 6px;
+            font-weight: bold;
+        }
+
+        input {
+            display: block;
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #bbb;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        input:focus {
+            outline: 2px solid #8ab4f8;
+            border-color: #4285f4;
+        }
+
         button {
             width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            box-sizing: border-box;
-        }
-
-        button {
+            padding: 14px;
+            margin-top: 22px;
+            border: none;
+            border-radius: 5px;
             background: #222;
             color: white;
-            border: none;
+            font-size: 16px;
             cursor: pointer;
         }
 
         button:hover {
-            opacity: 0.8;
+            background: #444;
+        }
+
+        button:disabled {
+            background: #777;
+            cursor: wait;
         }
 
         #result {
-            margin-top: 20px;
+            margin-top: 24px;
+            padding: 16px;
+            border-radius: 6px;
+            background: #f7f8fa;
             white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            line-height: 1.6;
         }
 
-    </style>
+        .error {
+            color: #b42318;
+        }
 
+        .success {
+            color: #222;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 12px;
+            }
+
+            .container {
+                padding: 18px;
+                margin: 8px auto;
+            }
+
+            h1 {
+                font-size: 25px;
+            }
+        }
+    </style>
 </head>
 
 <body>
+    <main class="container">
+        <h1>🛒 AI Shopping Assistant</h1>
 
-<div class="container">
+        <form id="shoppingForm">
+            <label for="product">Product</label>
+            <input
+                id="product"
+                name="product"
+                placeholder="e.g. Smartphone"
+                required
+            >
 
-    <h1>🛒 AI Shopping Assistant</h1>
+            <label for="budget">Budget</label>
+            <input
+                id="budget"
+                name="budget"
+                placeholder="e.g. 800 or ₹60,000"
+                required
+            >
 
-    <input
-        id="product"
-        placeholder="What do you want to buy?"
-    >
+            <label for="brand">Preferred Brand</label>
+            <input
+                id="brand"
+                name="brand"
+                placeholder="e.g. Apple, Samsung, or Any"
+            >
 
-    <input
-        id="budget"
-        placeholder="Budget e.g. $500"
-    >
+            <label for="features">Required Features</label>
+            <input
+                id="features"
+                name="features"
+                placeholder="e.g. 8GB RAM, good battery"
+            >
 
-    <input
-        id="brand"
-        placeholder="Preferred brand"
-    >
+            <label for="purpose">Purpose / Usage</label>
+            <input
+                id="purpose"
+                name="purpose"
+                placeholder="e.g. School, work, gaming"
+            >
 
-    <input
-        id="features"
-        placeholder="Important features"
-    >
+            <button id="searchButton" type="submit">
+                Find Products
+            </button>
+        </form>
 
-    <input
-        id="purpose"
-        placeholder="Purpose / Usage"
-    >
+        <div
+            id="result"
+            class="hidden"
+            role="status"
+            aria-live="polite"
+        ></div>
+    </main>
 
-    <button onclick="findProducts()">
-        Find Products
-    </button>
+    <script>
+        const form = document.getElementById("shoppingForm");
+        const result = document.getElementById("result");
+        const searchButton = document.getElementById("searchButton");
 
-    <div id="result"></div>
+        function showMessage(message, isError = false) {
+            result.classList.remove("hidden", "error", "success");
+            result.classList.add(isError ? "error" : "success");
+            result.textContent = message;
+        }
 
-</div>
+        form.addEventListener("submit", async function (event) {
+            event.preventDefault();
 
-<script>
+            const input = {
+                product: document.getElementById("product").value.trim(),
+                budget: document.getElementById("budget").value.trim(),
+                brand: document.getElementById("brand").value.trim() || "Any",
+                features: document.getElementById("features").value.trim() || "No specific features",
+                purpose: document.getElementById("purpose").value.trim() || "General use"
+            };
 
-async function findProducts() {
-
-    const result = document.getElementById("result");
-
-    result.innerText = "Finding suitable products...";
-
-    const input = {
-
-        product:
-            document.getElementById("product").value,
-
-        budget:
-            document.getElementById("budget").value,
-
-        brand:
-            document.getElementById("brand").value,
-
-        features:
-            document.getElementById("features").value,
-
-        purpose:
-            document.getElementById("purpose").value
-    };
-
-    try {
-
-        const response = await fetch(
-            "/shopping-agent/invoke",
-            {
-                method: "POST",
-
-                headers: {
-                    "Content-Type": "application/json"
-                },
-
-                body: JSON.stringify({
-                    input: input
-                })
+            if (!input.product || !input.budget) {
+                showMessage("Please enter a product and budget.", true);
+                return;
             }
-        );
 
-        const data = await response.json();
+            searchButton.disabled = true;
+            searchButton.textContent = "Searching...";
+            showMessage("Searching for suitable products...");
 
-        result.innerText = data.output;
+            try {
+                const response = await fetch("/shopping-agent/invoke", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify({
+                        input: input
+                    })
+                });
 
-    }
+                const responseText = await response.text();
 
-    catch (error) {
+                let data;
 
-        result.innerText =
-            "Error: " + error.message;
+                try {
+                    data = JSON.parse(responseText);
+                } catch {
+                    throw new Error(
+                        `The server returned an invalid response (HTTP ${response.status}). Please check your Render logs.`
+                    );
+                }
 
-    }
+                if (!response.ok) {
+                    const detail = data.detail || data.error;
+                    const message = typeof detail === "string"
+                        ? detail
+                        : detail
+                            ? JSON.stringify(detail)
+                            : `Request failed (HTTP ${response.status}).`;
 
-}
+                    throw new Error(message);
+                }
 
-</script>
+                const output = data.output;
 
+                if (output === undefined || output === null) {
+                    showMessage(
+                        "The request succeeded, but the server returned no output.",
+                        true
+                    );
+                } else if (typeof output === "string") {
+                    showMessage(output);
+                } else {
+                    showMessage(JSON.stringify(output, null, 2));
+                }
+
+            } catch (error) {
+                console.error("Shopping Assistant error:", error);
+
+                showMessage(
+                    "Error: " + error.message +
+                    "\n\nIf the problem continues, open Render Dashboard → Logs to find the backend error.",
+                    true
+                );
+            } finally {
+                searchButton.disabled = false;
+                searchButton.textContent = "Find Products";
+            }
+        });
+    </script>
 </body>
-
 </html>
